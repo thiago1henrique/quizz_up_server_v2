@@ -274,7 +274,7 @@ const NewQuestion = () => {
         <section className="bg-gray-50 min-h-screen">
             <Header />
             <div className={"w-full flex flex-col items-center justify-center px-4 sm:px-0 pt-[8rem] pb-10 sm:pt-24"}>
-                <div className={"bg-white p-6 sm:p-10 rounded-lg shadow-xl w-full max-w-2xl"}>
+                <div className={"bg-white p-0 sm:p-10 rounded-lg shadow-xl w-full max-w-2xl"}>
                     <h1 className={"text-3xl sm:text-4xl font-bold mb-8 text-center text-gray-800"}>
                         {isEditMode ? "Editar Quiz" : "Criar Novo Quiz"}
                     </h1>
