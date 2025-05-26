@@ -1,40 +1,34 @@
 import { Link } from "react-router-dom";
 
-// Interface atualizada para incluir as props necessárias
 interface CardHomeProps {
     title: string;
     description: string;
-    imageUrl?: string; // Usando imageUrl (opcional) em vez de 'cover'
-    quizId: number | string; // ID do Quiz para construir a rota
+    imageUrl?: string;
+    quizId: number | string; 
     isAdmin?: boolean;
-    onDelete?: (quizId: number | string) => void; // Passa o ID para a função de delete
+    onDelete?: (quizId: number | string) => void; 
 }
 
 const CardHome = ({ title, description, imageUrl, quizId, isAdmin = false, onDelete }: CardHomeProps) => {
 
-    // Constrói a rota para jogar o quiz
     const quizRoute = `/quiz/${quizId}`;
-    // Constrói a rota para editar o quiz (ajuste se sua rota for diferente)
     const editRoute = `/edit-quiz/${quizId}`;
 
-    // Define uma imagem padrão caso 'imageUrl' não seja fornecida
-    const displayImage = imageUrl || "https://cdn-icons-png.flaticon.com/512/3409/3409310.png"; // Use um placeholder
+    const displayImage = imageUrl || "https://cdn-icons-png.flaticon.com/512/3409/3409310.png"; 
 
-    // Handler para o botão de deletar, prevenindo navegação e chamando onDelete
     const handleDeleteClick = (e: React.MouseEvent) => {
-        e.preventDefault(); // Impede a navegação do Link pai
-        e.stopPropagation(); // Impede outros eventos de clique
+        e.preventDefault(); 
+        e.stopPropagation(); 
         if (window.confirm(`Tem certeza que deseja excluir o quiz "${title}"?`)) {
-            onDelete?.(quizId); // Chama a função passando o ID
+            onDelete?.(quizId); 
         }
     };
 
     return (
-        <div className="group relative h-full w-full sm:w-[300px]"> {/* Adicionado w-full e sm:w-[300px] */}
-            {/* Link principal para jogar o quiz */}
+        <div className="group relative h-full w-full sm:w-[300px]">
             <Link to={quizRoute}>
-                <div className="h-full bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1 border border-gray-100 flex flex-col"> {/* Adicionado flex flex-col */}
-                    {/* Imagem do Card */}
+                <div className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1 border border-gray-100 flex flex-col">
+
                     <div className="w-full bg-gray-100 flex items-center justify-center overflow-hidden pt-4">
                         <img
                             className="w-[50px] h-[50px] object-cover"
@@ -55,13 +49,11 @@ const CardHome = ({ title, description, imageUrl, quizId, isAdmin = false, onDel
                 </div>
             </Link>
 
-            {/* Botões de Admin (Editar/Excluir) */}
             {isAdmin && (
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {/* Botão Editar */}
-                    <Link to={editRoute}> {/* Link para a rota de edição */}
+                    <Link to={editRoute}>
                         <button
-                            onClick={(e) => e.stopPropagation()} // Impede o link pai de ser acionado
+                            onClick={(e) => e.stopPropagation()}
                             className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors cursor-pointer shadow-md"
                             aria-label="Editar quiz"
                         >
@@ -71,7 +63,6 @@ const CardHome = ({ title, description, imageUrl, quizId, isAdmin = false, onDel
                         </button>
                     </Link>
 
-                    {/* Botão Excluir */}
                     <button
                         onClick={handleDeleteClick}
                         className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors cursor-pointer shadow-md"

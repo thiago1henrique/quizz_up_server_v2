@@ -1,145 +1,156 @@
 import {
-    Controller,
-    Post,
-    Get,
-    Param,
-    NotFoundException,
-    UseInterceptors,
-    UploadedFile,
-    Body,
-    BadRequestException,
-    UseGuards,
-    Req,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  NotFoundException,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { QuizzesService } from './quizzes.service';
 import { AuthGuard } from '@nestjs/passport';
-import { UsersService } from '../users/users.service';
-import { Express } from 'express'; // <-- Importe Express se não estiver global
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../entities/user.entity';
+import { RolesGuard } from '../auth/roles.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { Quiz } from '../entities/quiz.entity';
+import { Express } from 'express'; 
 
-// Interface para os dados de criação de Quiz
 interface QuizCreateData {
-    questions: any[];
-    title: string;
-    description: string;
-    userId: number;
-    logo?: string;
+  questions: any[];
+  title: string;
+  description: string;
+  userId: number;
+  logo?: string;
 }
-
-// Interface para o corpo da requisição - ATUALIZADA
 interface SaveResultDto {
-    quizId: number;
-    score: number;
-    total: number; // Total de questões no quiz
-    // quizTitle e quizLogo removidos pois não são enviados ao serviço
+  quizId: number;
+  score: number;
+  total: number;
 }
-
 
 @Controller('quizzes')
 export class QuizzesController {
-    constructor(
-        private readonly quizzesService: QuizzesService,
-        private readonly usersService: UsersService,
-    ) {}
+  constructor(
+    private readonly quizzesService: QuizzesService,
+  ) {}
 
-    // --- Endpoint para CRIAR um novo Quiz (POST /quizzes) ---
-    @Post()
-    @UseInterceptors(FileInterceptor('logo', {
-        storage: diskStorage({
-            destination: './uploads/logos',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                cb(null, `${uniqueSuffix}-${file.originalname}`);
-            }
-        })
-    }))
-    async create(
-        @UploadedFile() logo: Express.Multer.File,
-        @Body() body: any
-    ) {
-        let questionsData = [];
-        try {
-            if (body.questions) {
-                questionsData = JSON.parse(body.questions);
-            } else {
-                throw new Error("O campo 'questions' é obrigatório.");
-            }
-        } catch (error) {
-            console.error("Falha ao parsear 'questions':", body.questions, error);
-            throw new BadRequestException("Formato inválido para as questões.");
-        }
-
-        if (!body.userId) {
-            throw new BadRequestException("O campo 'userId' é obrigatório.");
-        }
-
-        const quizData: Partial<QuizCreateData> = { // Use Partial se QuizCreateData for usado
-            questions: questionsData,
-            title: body.title,
-            description: body.description,
-            userId: parseInt(body.userId, 10),
-        };
-
-        if (logo) {
-            quizData.logo = logo.filename;
-        }
-
-        console.log("Enviando para o serviço (Criação de Quiz):", quizData);
-        // Ajuste aqui se QuizCreateData não for compatível com Partial<Quiz>
-        return this.quizzesService.create(quizData as any); // Use 'as any' ou ajuste a tipagem
+  @Post()
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(FileInterceptor('logo', {
+    storage: diskStorage({
+      destination: './uploads/logos',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${uniqueSuffix}-${file.originalname}`);
+      },
+    }),
+  }))
+  async create(
+    @UploadedFile() logo: Express.Multer.File,
+    @Body() body: any,
+    @Req() req, 
+  ) {
+    let questionsData = [];
+    try {
+      if (body.questions) {
+        questionsData = JSON.parse(body.questions);
+      } else {
+        throw new Error("O campo 'questions' é obrigatório.");
+      }
+    } catch (error) {
+      throw new BadRequestException("Formato inválido para as questões.");
     }
 
-    // --- Endpoint para BUSCAR todos os Quizzes (GET /quizzes) ---
-    @Get()
-    async findAll() {
-        console.log("Buscando todos os quizzes...");
-        return this.quizzesService.findAll();
+    if (!body.title || !body.description) {
+         throw new BadRequestException("Título e descrição são obrigatórios.");
+    }
+    
+    const quizData: Partial<Quiz> = {
+      questions: questionsData,
+      title: body.title,
+      description: body.description,
+      userCreator: { id: req.user.userId } as any, 
+    };
+
+    if (logo) {
+      quizData.logo = logo.filename;
+    }
+    return this.quizzesService.create(quizData);
+  }
+
+  @Get()
+  async findAll() {
+    return this.quizzesService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const quiz = await this.quizzesService.findOne(id);
+    if (!quiz) {
+      throw new NotFoundException(`Quiz com ID ${id} não encontrado.`);
+    }
+    return quiz;
+  }
+
+  @Put(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(FileInterceptor('logo',)) 
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateData: Partial<Quiz>, 
+    @UploadedFile() logo?: Express.Multer.File,
+  ) {
+    if (logo) {
+      updateData.logo = logo.filename;
     }
 
-    // --- Endpoint para BUSCAR um Quiz por ID (GET /quizzes/:id) ---
-    @Get(':id')
-    async findOne(@Param('id') id: string) {
-        console.log(`Buscando quiz com ID: ${id}`);
-        const quiz = await this.quizzesService.findOne(+id);
-        if (!quiz) {
-            throw new NotFoundException(`Quiz com ID ${id} não encontrado.`);
-        }
-        return quiz;
+    if (updateData.questions && typeof updateData.questions === 'string') {
+      try {
+        updateData.questions = JSON.parse(updateData.questions as any);
+      } catch (error) {
+        throw new BadRequestException("Formato inválido para as questões na atualização.");
+      }
+    }
+    return this.quizzesService.update(id, updateData);
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.quizzesService.remove(id);
+  }
+
+  @Post('save-result')
+  @UseGuards(AuthGuard()) 
+  async saveResult(
+    @Req() req,
+    @Body() body: SaveResultDto,
+  ) {
+    const userIdFromToken = req.user.userId;
+    if (!userIdFromToken) {
+      throw new BadRequestException("ID do usuário não encontrado no token.");
     }
 
-    // --- NOVO ENDPOINT PARA SALVAR RESULTADO DO QUIZ ---
-    @Post('save-result')
-    @UseGuards(AuthGuard())
-    async saveResult(
-        @Req() req,
-        @Body() body: SaveResultDto // Usa o DTO ATUALIZADO
-    ) {
-        const userIdFromToken = req.user.userId;
-        if (!userIdFromToken) {
-            throw new BadRequestException("ID do usuário não encontrado no token.");
-        }
-
-        const user = await this.usersService.findOne(userIdFromToken);
-        if (!user) {
-            throw new NotFoundException(`Usuário com ID ${userIdFromToken} não encontrado.`);
-        }
-
-        const quiz = await this.quizzesService.findOne(body.quizId);
-        if (!quiz) {
-            throw new NotFoundException(`Quiz com ID ${body.quizId} não encontrado.`);
-        }
-
-        console.log(`Salvando resultado para User ID: ${user.id}, Quiz ID: ${quiz.id}`);
-
-        // --- CHAMADA CORRIGIDA ---
-        return this.quizzesService.createResult({
-            score: body.score,
-            totalQuestions: body.total,
-            userId: user.id,
-            quizId: quiz.id,
-            // quizTitle e quizLogo removidos!
-        });
-        // -------------------------
-    }
+    return this.quizzesService.createResult({
+      score: body.score,
+      totalQuestions: body.total,
+      userId: userIdFromToken,
+      quizId: body.quizId,
+    });
+  }
 }

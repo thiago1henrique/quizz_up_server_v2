@@ -1,35 +1,45 @@
-// src/entities/quiz.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm'; // <-- Importe OneToMany
-import { QuizAttempt } from './quiz-attempt.entity'; // <-- Importe QuizAttempt
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne, 
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { QuizAttempt } from './quiz-attempt.entity';
+import { User } from './user.entity'; 
 
 @Entity()
 export class Quiz {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
+  @Column()
+  title: string;
+
+  @Column()
+  description: string;
+
+  @Column()
+  logo: string;
+
+  @Column('simple-json') 
+  questions: {
     title: string;
+    alternatives: { text: string; isCorrect: boolean }[];
+  }[];
 
-    @Column()
-    description: string;
 
-    @Column()
-    logo: string;
+  @ManyToOne(() => User, user => user.createdQuizzes, { onDelete: 'SET NULL', nullable: true }) 
+  userCreator: User;
 
-    @Column('json')
-    questions: {
-        title: string;
-        alternatives: {
-            text: string;
-            correct: boolean;
-        }[];
-    }[];
+  @OneToMany(() => QuizAttempt, attempt => attempt.quiz)
+  attempts: QuizAttempt[];
 
-    @Column()
-    userId: number; // Relacionamento simples sem FK para agilizar
+  @CreateDateColumn()
+  createdAt: Date;
 
-    // --- ADICIONE ESTA SEÇÃO ---
-    @OneToMany(() => QuizAttempt, attempt => attempt.quiz)
-    attempts: QuizAttempt[];
-    // ---------------------------
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

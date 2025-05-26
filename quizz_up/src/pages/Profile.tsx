@@ -27,7 +27,7 @@ const Profile = () => {
     const handleLogout = () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
-        navigate('/login'); // Redireciona para login após logout
+        navigate('/login'); 
     };
 
     useEffect(() => {
@@ -36,39 +36,39 @@ const Profile = () => {
             setError('');
             try {
                 const token = localStorage.getItem('token');
-                const userString = localStorage.getItem('user'); // Pega o user do localStorage
+                const userString = localStorage.getItem('user'); 
 
-                if (!token || !userString) { // Se não tiver token OU userString
-                    navigate('/login');      // Redireciona para login
+                if (!token || !userString) { 
+                    navigate('/login');      
                     return;
                 }
 
                 let loggedInUser;
                 try {
-                    loggedInUser = JSON.parse(userString); // Faz o parse do userString
+                    loggedInUser = JSON.parse(userString);
                 } catch (e) {
                     console.error("Erro ao parsear dados do usuário do localStorage", e);
-                    handleLogout(); // Se não conseguir parsear, desloga
+                    handleLogout(); 
                     return;
                 }
 
-                if (!loggedInUser || !loggedInUser.id) { // Verifica se o user e user.id existem
+                if (!loggedInUser || !loggedInUser.id) { 
                     console.error("ID do usuário não encontrado no localStorage");
-                    handleLogout(); // Se não tiver ID, desloga
+                    handleLogout(); 
                     return;
                 }
 
-                const userId = loggedInUser.id; // Pega o ID do usuário
+                const userId = loggedInUser.id; 
 
                 // Faz a requisição para /users/:id
                 const response = await fetch(`http://localhost:3000/users/${userId}`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`, // Envia o token
+                        'Authorization': `Bearer ${token}`, 
                         'Content-Type': 'application/json'
                     }
                 });
 
-                if (response.status === 401) { // Se não autorizado (token inválido)
+                if (response.status === 401) { 
                     handleLogout();
                     return;
                 }
@@ -80,15 +80,12 @@ const Profile = () => {
 
                 const data: UserData = await response.json();
 
-                // --- ADAPTADO AQUI ---
-                // Verifica se quizHistory existe. Se não, define como array vazio.
                 if (!data.quizHistory) {
                     console.warn('Dados de histórico (quizHistory) não encontrados na resposta. Usando array vazio.', data);
-                    setUserData({ ...data, quizHistory: [] }); // Garante que userData é setado e quizHistory é um array
+                    setUserData({ ...data, quizHistory: [] }); 
                 } else {
-                    setUserData(data); // Se existe, usa os dados como vieram
+                    setUserData(data); 
                 }
-                // --- FIM DA ADAPTAÇÃO ---
 
             } catch (err: any) {
                 if (err.message === 'Failed to fetch') {
@@ -102,7 +99,7 @@ const Profile = () => {
         };
 
         fetchProfile();
-    }, [navigate]); // navigate é a única dependência externa que pode mudar e afetar a lógica
+    }, [navigate]); 
 
 
     if (loading) {
@@ -110,7 +107,6 @@ const Profile = () => {
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
                 <Header />
                 <div className="max-w-4xl mx-auto px-4 py-32 text-center">
-                    {/* Skeleton Loader */}
                     <div className="animate-pulse space-y-4">
                         <div className="h-8 bg-gray-200 rounded w-1/4 mx-auto"></div>
                         <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
@@ -145,7 +141,6 @@ const Profile = () => {
         );
     }
 
-    // Agora userData.quizHistory é garantido ser um array (pode ser vazio, mas não undefined/null)
     const { name: studentName, quizHistory } = userData;
     const totalScore = quizHistory.reduce((acc, quiz) => acc + quiz.score, 0);
     const totalQuestions = quizHistory.reduce((acc, quiz) => acc + quiz.total, 0);

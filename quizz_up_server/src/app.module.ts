@@ -1,31 +1,33 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { User } from './entities/user.entity';
 import { Quiz } from './entities/quiz.entity';
-import { QuizAttempt } from './entities/quiz-attempt.entity'; // <-- 1. Importe a entidade QuizAttempt
+import { QuizAttempt } from './entities/quiz-attempt.entity';
 import { UsersModule } from './users/users.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { AuthModule } from './auth/auth.module';
-import { join } from 'path';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'sqlite',
+      type: 'sqlite', 
       database: join(__dirname, '..', 'database.sqlite'),
-      entities: [
-          User,
-          Quiz,
-          QuizAttempt // <-- 2. Adicione QuizAttempt à lista de entidades
-      ],
-      synchronize: true,
+      entities: [User, Quiz, QuizAttempt],
+      synchronize: true, 
       logging: true,
-      retryAttempts: 2,
-      retryDelay: 1000,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'), 
+      serveRoot: '/uploads', 
     }),
     UsersModule,
     QuizzesModule,
     AuthModule,
+  ],
+  controllers: [],
+  providers: [
   ],
 })
 export class AppModule {}

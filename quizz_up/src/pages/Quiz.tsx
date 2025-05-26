@@ -13,7 +13,7 @@ interface QuizDataBackend {
   id: number;
   title: string;
   description: string;
-  logo?: string; // Adicionado para podermos usar ao salvar o resultado
+  logo?: string; 
   questions: {
     title: string;
     alternatives: { text: string; isCorrect: boolean }[];
@@ -21,10 +21,10 @@ interface QuizDataBackend {
 }
 
 const Quiz = () => {
-  const { id: quizIdParam } = useParams<{ id: string }>(); // Renomeado para evitar conflito com quizId de attemptData
-  const navigate = useNavigate(); // Adicionado para redirecionamento
+  const { id: quizIdParam } = useParams<{ id: string }>(); 
+  const navigate = useNavigate(); 
 
-  const [quizData, setQuizData] = useState<QuizDataBackend | null>(null); // Para dados completos do quiz
+  const [quizData, setQuizData] = useState<QuizDataBackend | null>(null); 
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState<QuestionUI[]>([]);
   const [current, setCurrent] = useState(0);
@@ -34,8 +34,8 @@ const Quiz = () => {
   const [showResult, setShowResult] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [saveError, setSaveError] = useState(''); // Erro específico para salvar resultado
-  const hasFiredConfetti = useRef(false); // Renomeado para clareza
+  const [saveError, setSaveError] = useState(''); 
+  const hasFiredConfetti = useRef(false); 
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -53,7 +53,7 @@ const Quiz = () => {
           throw new Error('Quiz não encontrado ou erro no servidor.');
         }
         const data: QuizDataBackend = await response.json();
-        setQuizData(data); // Salva todos os dados do quiz
+        setQuizData(data); 
         setQuizTitle(data.title);
         const formattedQuestions: QuestionUI[] = data.questions.map(q => {
           const correctIndex = q.alternatives.findIndex(alt => alt.isCorrect);
@@ -78,7 +78,7 @@ const Quiz = () => {
 
   const question = questions.length > 0 ? questions[current] : null;
 
-  const handleNextLogic = () => { // Lógica separada para ser usada pelo timer e botão
+  const handleNextLogic = () => { 
     setSelected(null);
     if (current < questions.length - 1) {
       setCurrent(current + 1);
@@ -88,14 +88,14 @@ const Quiz = () => {
     }
   };
 
-  const handleNext = handleNextLogic; // Atribui para o botão
+  const handleNext = handleNextLogic; 
 
   useEffect(() => {
     if (loading || showResult || questions.length === 0) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          handleNextLogic(); // Chama a lógica separada
+          handleNextLogic();
           return 60;
         }
         return prev - 1;
@@ -126,7 +126,7 @@ const Quiz = () => {
 
     if (!token || !userString) {
       setSaveError("Você precisa estar logado para salvar seu resultado.");
-      navigate('/login'); // Opcional: redirecionar para login
+      navigate('/login'); 
       return;
     }
     if (!quizData || !quizIdParam) {
@@ -152,14 +152,14 @@ const Quiz = () => {
       userId: loggedInUser.id,
       quizId: parseInt(quizIdParam, 10),
       score: score,
-      total: questions.length, // O backend espera 'total' (ou totalQuestions, ajuste conforme seu DTO)
+      total: questions.length, 
       quizTitle: quizData.title,
-      quizLogo: quizData.logo || null, // Passa o logo se existir
+      quizLogo: quizData.logo || null, 
     };
 
     try {
-      setSaveError(''); // Limpa erro anterior
-      const response = await fetch('http://localhost:3000/quizzes/save-result', { // Ou /quiz-attempts
+      setSaveError('');
+      const response = await fetch('http://localhost:3000/quizzes/save-result', { 
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -173,7 +173,7 @@ const Quiz = () => {
         throw new Error(errorData.message || 'Falha ao salvar o resultado do quiz.');
       }
       console.log("Resultado do quiz salvo com sucesso!");
-      // Você pode querer dar um feedback de sucesso aqui
+      
     } catch (err: any) {
       console.error("Erro ao salvar resultado do quiz:", err);
       setSaveError("Não foi possível salvar seu resultado: " + err.message);
@@ -184,7 +184,7 @@ const Quiz = () => {
     if (showResult && !hasFiredConfetti.current) {
       hasFiredConfetti.current = true;
       confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
-      saveQuizResult(); // Chama a função para salvar o resultado
+      saveQuizResult(); 
     }
   }, [showResult]);
 
@@ -227,7 +227,7 @@ const Quiz = () => {
         </>
     );
   }
-  if (!question) return null; // Segurança adicional
+  if (!question) return null; 
 
   return (
       <>

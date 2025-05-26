@@ -1,5 +1,5 @@
 // src/entities/quiz-attempt.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Quiz } from './quiz.entity';
 
@@ -14,12 +14,15 @@ export class QuizAttempt {
   @Column()
   totalQuestions: number;
 
-  @Column()
+  @CreateDateColumn() 
   createdAt: Date;
 
-  @ManyToOne(() => User, user => user.attempts)
+  @ManyToOne(() => User, user => user.attempts, { onDelete: 'SET NULL', nullable: true }) 
   user: User;
 
-  @ManyToOne(() => Quiz, quiz => quiz.attempts)
+  @ManyToOne(() => Quiz, quiz => quiz.attempts, { 
+    onDelete: 'CASCADE', 
+    nullable: false   
+  })
   quiz: Quiz;
 }

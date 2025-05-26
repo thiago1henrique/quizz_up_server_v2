@@ -1,18 +1,19 @@
-// src/auth/auth.service.ts
+// src/auth/AuthService.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+// Não precisa mais importar bcrypt
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService, // Injeta o JwtService
+    private jwtService: JwtService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    // !! IMPORTANTE: Em produção, NUNCA compare senhas em texto plano. Use bcrypt. !!
+    // Comparação direta de strings (MUITO INSEGURO!)
     if (user && user.password === pass) {
       const { password, ...result } = user;
       return result;
@@ -20,23 +21,25 @@ export class AuthService {
     return null;
   }
 
+  // O método login permanece o mesmo, adicionando a 'role'
   async login(userFromValidate: any) {
-      const payloadForToken = { 
-          email: userFromValidate.email, 
-          sub: userFromValidate.id, // 'sub' para o token JWT
-          name: userFromValidate.name 
-      };
+    const payloadForToken = {
+      email: userFromValidate.email,
+      sub: userFromValidate.id,
+      name: userFromValidate.name,
+      role: userFromValidate.role, // <-- Adiciona a role
+    };
 
-      // Objeto user para retornar ao frontend com 'id'
-      const userToReturn = {
-          id: userFromValidate.id, // <-- GARANTA QUE 'id' ESTÁ AQUI
-          name: userFromValidate.name,
-          email: userFromValidate.email,
-      };
+    const userToReturn = {
+      id: userFromValidate.id,
+      name: userFromValidate.name,
+      email: userFromValidate.email,
+      role: userFromValidate.role, // <-- Adiciona a role
+    };
 
-      return {
-        access_token: this.jwtService.sign(payloadForToken),
-        user: userToReturn // <-- Retorna o objeto com 'id'
-      };
+    return {
+      access_token: this.jwtService.sign(payloadForToken),
+      user: userToReturn,
+    };
   }
 }
